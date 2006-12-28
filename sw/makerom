@@ -1,0 +1,2 @@
+#!/bin/sh
+gpasm -c -o rom $1 && gplink -o rom rom.o && objcopy -I ihex -O binary rom.hex rom.bin && hexdump -v -e'1/2 "%.4X\n"' rom.bin > rom.rom && mv rom.rom ../sim/ae18_core.rom && mv rom.lst makerom.lst && rm rom.*

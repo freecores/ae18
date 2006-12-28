@@ -1,0 +1,2 @@
+#!/bin/sh
+cver ../rtl/verilog/ae18_core.v
