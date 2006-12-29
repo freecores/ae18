@@ -1,4 +1,6 @@
 ;;; 
+;;; $Id: ae18_core.asm,v 1.2 2006-12-29 08:17:17 sybreon Exp $
+;;; 
 ;;; Copyright (C) 2006 Shawn Tan Ser Ngiap <shawn.tan@aeste.net>
 ;;;
 ;;; This library is free software; you can redistribute it and/or modify it 
@@ -76,7 +78,7 @@ _START_TEST:
 	rcall	_SHA_TEST	
 	rcall	_TBL_TEST	
 
-	
+
 	;; All tests OK!!
 	sleep
 
@@ -92,13 +94,19 @@ _START_TEST:
 
 	;;
 	;; TABLE tests - OK
-	;; Tests to check that TBLWT/TBLRD are working
+	;; Tests to check that TBLRD is working
 	;;
 _TBL_TEST:
+	clrf	TBLPTRH
+	clrf	TBLPTRL
 	tblrd*+			; TABLAT = 10
+	movf	TABLAT,W
+	xorlw	0x10
+	bnz	$
 	tblrd*+			; TABLAT = EF
-	tblrd*+			; TABLAT = 00
-	tblrd*+			; TABLAT = FF
+	movf	TABLAT,W
+	xorlw	0xEF
+	bnz	$
 	retlw	0x00
 	
 	;;
@@ -318,7 +326,8 @@ _FW2F_TEST:
 	incf	reg2,F		; REG2 = 0x5B
 	decf	reg2,F		; REG2 = 0x5A	
 
-	xorwf	reg2,W		; WREG = 0x00
+	xorwf	reg2,W		; WREG = 0xFF
+	xorlw	0xFF
 	bnz	$
 	retlw	0x00
 
