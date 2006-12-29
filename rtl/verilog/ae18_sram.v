@@ -1,16 +1,16 @@
 //                              -*- Mode: Verilog -*-
 // Filename        : ae18_sram.v
 // Description     : AE18 Synchronous RAM
-// Author          : 
+// Author          : Shawn Tan Ser Ngiap <shawn.tan@aeste.net>
 // Created On      : Fri Dec 29 05:12:03 2006
-// Last Modified By: .
-// Last Modified On: .
+// Last Modified By: Shawn Tan
+// Last Modified On: 2006-12-29
 // Update Count    : 0
-// Status          : Unknown, Use with caution!
+// Status          : Beta/Stable
 
 /*
  *
- * $Id: ae18_sram.v,v 1.1 2006-12-29 08:17:16 sybreon Exp $
+ * $Id: ae18_sram.v,v 1.2 2006-12-29 18:03:07 sybreon Exp $
  * 
  * Copyright (C) 2006 Shawn Tan Ser Ngiap <shawn.tan@aeste.net>
  *  
@@ -31,8 +31,9 @@
  * DESCRIPTION
  * AE18 small block of RAM.
  * 
- * 2006-12-29
- * Initial checkin
+ * HISTORY
+ * $Log: not supported by cvs2svn $
+ * 
  */
 
 module ae18_sram (/*AUTOARG*/
