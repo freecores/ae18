@@ -10,7 +10,7 @@
 
 /*
  *
- * $Id: ae18_core_tb.v,v 1.1 2006-12-29 08:17:16 sybreon Exp $
+ * $Id: ae18_core_tb.v,v 1.2 2006-12-29 18:08:11 sybreon Exp $
  * 
  * Copyright (C) 2006 Shawn Tan Ser Ngiap <shawn.tan@aeste.net>
  *  
@@ -33,8 +33,9 @@
  * from the ae18_core.rom file. This file will usually contain the test
  * software from ae18_core.asm in the software directory.
  * 
- * 2006-12-29
- * Initial Checkin
+ * HISTORY
+ * $Log: not supported by cvs2svn $
+ * 
  */
 
 module ae18_core_tb (/*AUTOARG*/);
@@ -51,8 +52,9 @@ module ae18_core_tb (/*AUTOARG*/);
    wire [1:0] 	   qfsm_o, qmod_o;
    wire [3:0] 	   qena_o;
 
-   reg 		   clk, rst;
+   reg 		   clk_i, rst_i;
    reg [1:0] 	   int_i;
+   reg [7:6] 	   inte_i;   
    reg 		   dwb_ack_i, iwb_ack_i;
    reg [15:0] 	   iwb_dat_i;   
 
@@ -61,16 +63,16 @@ module ae18_core_tb (/*AUTOARG*/);
       $dumpfile("ae18_core.vcd");      
       $dumpvars(1, iwb_adr_o,iwb_dat_i,iwb_stb_o,iwb_we_o,iwb_sel_o);
       $dumpvars(1, dwb_adr_o,dwb_dat_i,dwb_dat_o,dwb_we_o,dwb_stb_o);
-      $dumpvars(1, clk,int_i);      
+      $dumpvars(1, clk_i,int_i);      
       $dumpvars(1, dut);      
    end
 
    initial begin
-      clk = 1;
-      rst = 0;
+      clk_i = 1;
+      rst_i = 0;
       int_i = 2'b00;
 
-      #50 rst = 1;
+      #50 rst_i = 1;
       #20000 int_i = 2'b10;
       #50 int_i = 2'b00;      
    end
@@ -86,7 +88,7 @@ module ae18_core_tb (/*AUTOARG*/);
 	$finish;      
    join
    
-   always #5 clk = ~clk;   
+   always #5 clk_i = ~clk_i;   
 
    reg [15:0]  rom [0:65535];
 
@@ -96,7 +98,7 @@ module ae18_core_tb (/*AUTOARG*/);
    end   
 
    // Fake Memory Signals
-   always @(posedge clk) begin
+   always @(posedge clk_i) begin
       dwb_ack_i <= dwb_stb_o;
       iwb_ack_i <= iwb_stb_o;      
       if (iwb_stb_o) iwb_dat_i <= rom[iwb_adr_o];
@@ -108,33 +110,31 @@ module ae18_core_tb (/*AUTOARG*/);
 	  .rdat(dwb_dat_i), .wdat(dwb_dat_o),
 	  .we(dwb_we_o & dwb_stb_o),
 	  // Inputs
-	  .clk				(clk));
+	  .clk	(clk_i));
 
    // AE18 test core   
    ae18_core #(ISIZ,DSIZ,11)
-     dut (
-	  .clk_i(clk), .rst_i(rst),
-	  .inte_i(2'b11),
+     dut (/*AUTOINST*/
 	  // Outputs
 	  .wb_clk_o			(wb_clk_o),
 	  .wb_rst_o			(wb_rst_o),
-	  .iwb_adr_o			(iwb_adr_o),
+	  .iwb_adr_o			(iwb_adr_o[ISIZ-1:1]),
 	  .iwb_dat_o			(iwb_dat_o[15:0]),
 	  .iwb_stb_o			(iwb_stb_o),
 	  .iwb_we_o			(iwb_we_o),
 	  .iwb_sel_o			(iwb_sel_o[1:0]),
-	  .dwb_adr_o			(dwb_adr_o),
+	  .dwb_adr_o			(dwb_adr_o[DSIZ-1:0]),
 	  .dwb_dat_o			(dwb_dat_o[7:0]),
 	  .dwb_stb_o			(dwb_stb_o),
 	  .dwb_we_o			(dwb_we_o),
-	  //.qena_o			(qena_o[3:0]),
-	  //.qfsm_o			(qfsm_o[1:0]),
-	  //.qmod_o			(qmod_o[1:0]),
 	  // Inputs
 	  .iwb_dat_i			(iwb_dat_i[15:0]),
 	  .iwb_ack_i			(iwb_ack_i),
 	  .dwb_dat_i			(dwb_dat_i[7:0]),
 	  .dwb_ack_i			(dwb_ack_i),
-	  .int_i			(int_i[1:0]));
+	  .int_i			(int_i[1:0]),
+	  .inte_i			(inte_i[7:6]),
+	  .clk_i			(clk_i),
+	  .rst_i			(rst_i));
    
 endmodule // ae18_core_tb
