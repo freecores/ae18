@@ -9,7 +9,7 @@
 // Status          : Beta/Stable
 
 /*
- * $Id: ae18_core.v,v 1.2 2006-12-29 08:17:16 sybreon Exp $
+ * $Id: ae18_core.v,v 1.3 2006-12-29 17:52:13 sybreon Exp $
  * 
  * Copyright (C) 2006 Shawn Tan Ser Ngiap <shawn.tan@aeste.net>
  *  
@@ -1096,33 +1096,6 @@ module ae18_core (/*AUTOARG*/
 	endcase // case(rMXBCC)	
      end  
  
-   // SKIP register
-   wire 	  wSKP = 
-		  (rMXSKP == MXSKP_SZ) ? wZ :
-		  (rMXSKP == MXSKP_SNZ) ? ~wZ :
-		  (rMXSKP == MXSKP_SNC) ? ~wC :
-		  (rMXSKP == MXSKP_SCC) ? rBCC :
-		  (rMXSKP == MXSKP_SU) ? 1'b1 :
-		  1'b0;   
-   always @(negedge clk or negedge qrst)
-     if (!qrst)
-       rNSKP <= 1'h1;
-     else if (qena[3])
-       rNSKP <= #1 (rNSKP) ? ~wSKP : 1'b1;
-
-   // STACK
-   wire [ISIZ-1:0] wSTKW = {rTOSU,rTOSH,rTOSL};
-   wire [ISIZ-1:0] wSTKR;
-   wire 	   wSTKE = (qena[1]);
-   
-   ae18_aram #(ISIZ,5)
-     stack (
-	    .wdat(wSTKW), .rdat(wSTKR),
-	    .radr(rSTKPTR[4:0]), .wadr(rSTKPTR_[4:0]), 
-	    .we(wSTKE),
-	    // Inputs
-	    .clk			(clk));
-      
    /*
     * DESCRIPTION
     * Data WB logic
@@ -1595,5 +1568,32 @@ module ae18_core (/*AUTOARG*/
 	{rPCU,rPCH,rPCL} <= #1 ((rDWBADR == aPCL) & rDWBWE) ? {rPCLATU,rPCLATH,rRESULT} :
 			    {rPCNXT,1'b0};	
      end   
+
+   // SKIP register
+   wire 	  wSKP = 
+		  (rMXSKP == MXSKP_SZ) ? wZ :
+		  (rMXSKP == MXSKP_SNZ) ? ~wZ :
+		  (rMXSKP == MXSKP_SNC) ? ~wC :
+		  (rMXSKP == MXSKP_SCC) ? rBCC :
+		  (rMXSKP == MXSKP_SU) ? (1'b1) :
+		  1'b0;   
+   always @(negedge clk or negedge qrst)
+     if (!qrst)
+       rNSKP <= 1'h1;
+     else if (qena[3])       
+       rNSKP <= #1 ((rDWBADR == aPCL) & rDWBWE) ? 1'b0 : ~(wSKP & rNSKP);
+
+   // STACK
+   wire [ISIZ-1:0] wSTKW = {rTOSU,rTOSH,rTOSL};
+   wire [ISIZ-1:0] wSTKR;
+   wire 	   wSTKE = (qena[1]);
    
+   ae18_aram #(ISIZ,5)
+     stack (
+	    .wdat(wSTKW), .rdat(wSTKR),
+	    .radr(rSTKPTR[4:0]), .wadr(rSTKPTR_[4:0]), 
+	    .we(wSTKE),
+	    // Inputs
+	    .clk			(clk));
+         
 endmodule // ae18_core
