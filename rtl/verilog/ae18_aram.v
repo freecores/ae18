@@ -6,11 +6,11 @@
 // Last Modified By: Shawn Tan
 // Last Modified On: 2006-12-29
 // Update Count    : 0
-// Status          : Unknown, Use with caution!
+// Status          : Beta/Stable
 
 /*
  *
- * $Id: ae18_aram.v,v 1.1 2006-12-29 08:17:16 sybreon Exp $
+ * $Id: ae18_aram.v,v 1.2 2006-12-29 18:04:04 sybreon Exp $
  * 
  * Copyright (C) 2006 Shawn Tan Ser Ngiap <shawn.tan@aeste.net>
  *  
@@ -31,8 +31,9 @@
  * DESCRIPTION
  * Basic asynchronous inferred RAM.
  *
- * 2006-12-29
- * Initial Checkin
+ * HISTORY
+ * $Log
+ * 
  */
 
 module ae18_aram (/*AUTOARG*/
