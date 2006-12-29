@@ -1,5 +1,5 @@
 ;;; 
-;;; $Id: ae18_core.asm,v 1.2 2006-12-29 08:17:17 sybreon Exp $
+;;; $Id: ae18_core.asm,v 1.3 2006-12-29 17:54:21 sybreon Exp $
 ;;; 
 ;;; Copyright (C) 2006 Shawn Tan Ser Ngiap <shawn.tan@aeste.net>
 ;;;
@@ -61,7 +61,7 @@ _MAIN	code	0x0020
 _START_TEST:
 	;; Clear WDT
 	clrwdt		
-		
+			
 	rcall	_NPC_TEST
 	rcall	_LW2W_TEST
 	rcall	_BSR_TEST
@@ -77,7 +77,8 @@ _START_TEST:
 	rcall	_FSR_TEST	
 	rcall	_SHA_TEST	
 	rcall	_TBL_TEST	
-
+	rcall	_PCL_TEST
+	
 
 	;; All tests OK!!
 	sleep
@@ -92,6 +93,36 @@ _START_TEST:
 	;; Infinite Loop. It should NEVER loop.
 	bra	$	
 
+	;; 
+	;; PCL tests - OK
+	;; Tests to check that PCLATU/PCLATH/PCL works.
+	;;
+_PCL_TEST:
+	movlw	UPPER(_PCL1)
+	movwf	PCLATU
+	movlw	HIGH(_PCL1)
+	movwf	PCLATH
+	movlw	LOW(_PCL1)
+	movwf	PCL		; Jump
+	bra	$
+_PCL1:
+	movlw	0xFF
+	movwf	PCLATU
+	movwf	PCLATH
+	movf	PCL,W		; WREG = _PCL0
+_PCL0:
+	xorlw	LOW(_PCL0)
+	bnz	$
+	movf	PCLATH,W
+	xorlw	HIGH(_PCL0)
+	bnz	$
+	movf	PCLATU,W
+	xorlw	UPPER(_PCL0)
+	bnz	$
+
+	retlw	0x00
+	
+		
 	;;
 	;; TABLE tests - OK
 	;; Tests to check that TBLRD is working
