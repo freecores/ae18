@@ -9,7 +9,7 @@
 // Status          : Beta/Stable
 
 /*
- * $Id: ae18_core.v,v 1.3 2006-12-29 17:52:13 sybreon Exp $
+ * $Id: ae18_core.v,v 1.4 2006-12-29 18:08:56 sybreon Exp $
  * 
  * Copyright (C) 2006 Shawn Tan Ser Ngiap <shawn.tan@aeste.net>
  *  
@@ -34,11 +34,9 @@
  * need to be integrated with the core. This core provides the necessary
  * signals to wire up WISHBONE compatible devices to it.
  *
- * 2006-12-29
- * Fixed minor bug with BCC and TBL instructions.
+ * HISTORY
+ * $Log: not supported by cvs2svn $
  * 
- * 2006-12-27
- * CVS Checkin
  */
 
 module ae18_core (/*AUTOARG*/
