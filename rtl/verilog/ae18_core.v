@@ -9,7 +9,7 @@
 // Status          : Beta/Stable
 
 /*
- * $Id: ae18_core.v,v 1.4 2006-12-29 18:08:56 sybreon Exp $
+ * $Id: ae18_core.v,v 1.5 2007-03-04 23:26:37 sybreon Exp $
  * 
  * Copyright (C) 2006 Shawn Tan Ser Ngiap <shawn.tan@aeste.net>
  *  
@@ -36,6 +36,9 @@
  *
  * HISTORY
  * $Log: not supported by cvs2svn $
+ * Revision 1.4  2006/12/29 18:08:56  sybreon
+ * Minor code clean up
+ *
  * 
  */
 
@@ -77,6 +80,133 @@ module ae18_core (/*AUTOARG*/
    input [7:6] 	     inte_i;   
    input 	     clk_i, rst_i;
 
+	/*
+	 * Parameters
+	 */
+   // State Registers
+   parameter [2:0] 
+		FSM_RUN = 4'h0,
+		FSM_ISRL = 4'h1,
+		FSM_ISRH = 4'h2,
+		FSM_SLEEP = 4'h3;
+   
+   parameter [1:0]
+		FSM_Q0 = 2'h0,
+		FSM_Q1 = 2'h1,
+		FSM_Q2 = 2'h2,
+		FSM_Q3 = 2'h3;   
+	
+   // MX_SRC
+   parameter [1:0]
+		MXSRC_MASK = 2'h2,
+		MXSRC_LIT = 2'h3,
+		MXSRC_WREG = 2'h0,
+		MXSRC_FILE = 2'h1;
+   // MX_TGT
+   parameter [1:0]
+		MXTGT_MASK = 2'h2,
+		MXTGT_LIT = 2'h3,
+		MXTGT_WREG = 2'h0,
+		MXTGT_FILE = 2'h1;
+   // MX_DST
+   parameter [1:0]
+		MXDST_NULL = 2'h0,
+		MXDST_EXT = 2'h1,
+		MXDST_WREG = 2'h2,
+		MXDST_FILE = 2'h3;   
+
+   // MX_ALU
+   parameter [3:0]
+		MXALU_XOR = 4'h0,
+		MXALU_IOR = 4'h1,
+		MXALU_AND = 4'h2,
+		MXALU_SWAP = 4'h3,
+		MXALU_ADD = 4'h4,
+		MXALU_ADDC = 4'h5,
+		MXALU_SUB = 4'h6,
+		MXALU_SUBC = 4'h7,
+		MXALU_RLNC = 4'h8,
+		MXALU_RLC = 4'h9,
+		MXALU_RRNC = 4'hA,
+		MXALU_RRC = 4'hB,
+		MXALU_NEG = 4'hC,
+		// EXTRA
+		MXALU_MOVLB = 4'hC,
+		MXALU_DAW = 4'hD,
+		MXALU_LFSR = 4'hE,
+		MXALU_MUL = 4'hF;
+
+	// MX_BSR   
+   parameter [1:0]
+		MXBSR_BSR = 2'o3,
+		MXBSR_BSA = 2'o2,
+		MXBSR_LIT = 2'o1,
+		MXBSR_NUL = 2'o0;   
+
+	// MX_SKP
+   parameter [2:0]
+		MXSKP_SZ = 3'o1,
+		MXSKP_SNZ = 3'o2,
+		MXSKP_SNC = 3'o3,
+		MXSKP_SU = 3'o4,
+		MXSKP_SCC = 3'o7,
+		MXSKP_NON = 3'o0;
+   
+   // NPC_MX
+   parameter [2:0]
+		MXNPC_FAR = 3'o3,
+		MXNPC_NEAR = 3'o2,
+		MXNPC_BCC = 3'o7,
+		MXNPC_RET = 3'o1,
+		MXNPC_RESET = 3'o4,
+		MXNPC_ISRH = 3'o5,
+		MXNPC_ISRL = 3'o6,
+		MXNPC_INC = 3'o0;
+
+   // MX_STA
+   parameter [2:0]
+		MXSTA_ALL = 3'o7,
+		MXSTA_CZN = 3'o1,
+		MXSTA_ZN = 3'o2,
+		MXSTA_Z = 3'o3,
+		MXSTA_C = 3'o4,
+		MXSTA_NONE = 3'o0;
+
+   // BCC_MX
+   parameter [2:0]
+		MXBCC_BZ = 3'o0,
+		MXBCC_BNZ = 3'o1,
+		MXBCC_BC = 3'o2,
+		MXBCC_BNC = 3'o3,
+		MXBCC_BOV = 3'o4,
+		MXBCC_BNOV = 3'o5,
+		MXBCC_BN = 3'o6,
+		MXBCC_BNN = 3'o7;
+
+   // STK_MX
+   parameter [1:0]
+		MXSTK_PUSH = 2'o2,
+		MXSTK_POP = 2'o1,
+		MXSTK_NONE = 2'o0;
+
+   // SHADOW MX
+   parameter [1:0]
+		MXSHA_CALL = 2'o2,
+		MXSHA_RET = 2'o1,
+		MXSHA_NONE = 2'o0;
+
+   // TBLRD/TBLWT MX
+   parameter [3:0]
+		MXTBL_RD = 4'h8,
+		MXTBL_RDINC = 4'h9,
+		MXTBL_RDDEC = 4'hA,
+		MXTBL_RDPRE = 4'hB,
+		MXTBL_WT = 4'hC,
+		MXTBL_WTINC = 4'hD,
+		MXTBL_WTDEC = 4'hE,
+		MXTBL_WTPRE = 4'hF,
+		MXTBL_NOP = 4'h0;
+   
    // Machine Status
    //output [3:0]      qena_o;
    //output [1:0]      qfsm_o;
@@ -120,6 +250,7 @@ module ae18_core (/*AUTOARG*/
   
    wire 	     clk = clk_i;
    wire 	     xrst = rst_i;
+   wire 	     qrst = rRESET;   
    assign 	     wb_clk_o = clk_i;
    assign 	     wb_rst_o = ~rRESET;   
 
@@ -155,18 +286,6 @@ module ae18_core (/*AUTOARG*/
     * AE18 MCU conductor.
     * Determines and generates the control signal for machine states.
     */
-   // State Registers
-   parameter [2:0] 
-		FSM_RUN = 4'h0,
-		FSM_ISRL = 4'h1,
-		FSM_ISRH = 4'h2,
-		FSM_SLEEP = 4'h3;
-   
-   parameter [1:0]
-		FSM_Q0 = 2'h0,
-		FSM_Q1 = 2'h1,
-		FSM_Q2 = 2'h2,
-		FSM_Q3 = 2'h3;   
       
    reg [3:0] 	     rQCLK;
    reg [1:0] 	     rQCNT;
@@ -176,7 +295,6 @@ module ae18_core (/*AUTOARG*/
    //assign 	     qfsm_o = rQCNT;
    //assign 	     qmod_o = rFSM;
 
-   wire 	     qrst = rRESET;   
    wire 	     xrun = !((iwb_stb_o ^ iwb_ack_i) | (dwb_stb_o ^ dwb_ack_i));
    wire 	     qrun = (rFSM != FSM_SLEEP);   
    wire [3:0] 	     qena = rQCLK;
@@ -305,11 +423,11 @@ module ae18_core (/*AUTOARG*/
        endcase // case(qfsm)
 
    // PC next calculation
+   wire [ISIZ-2:0]   wPCINC = rIWBADR + 1;
    wire [ISIZ-2:0]   wPCBCC = (!rNSKP) ? wPCINC : 
 		     (rBCC) ? rIWBADR + {{(ISIZ-8){rIREG[7]}},rIREG[7:0]} : wPCINC;      
    wire [ISIZ-2:0]   wPCNEAR = (!rNSKP) ? wPCINC : rIWBADR + {{(ISIZ-11){rIREG[10]}},rIREG[10:0]};      
    wire [ISIZ-2:0]   wPCFAR = (!rNSKP) ? wPCINC : {rROMLAT[11:0],rIREG[7:0]};   
-   wire [ISIZ-2:0]   wPCINC = rIWBADR + 1;
    wire [ISIZ-2:0]   wPCSTK = (!rNSKP) ? wPCINC : {rTOSU, rTOSH, rTOSL[7:1]};
 
    always @(negedge clk or negedge qrst)
@@ -537,11 +655,6 @@ module ae18_core (/*AUTOARG*/
    wire       fINT = ^rINTF;
    
    // MX_SRC
-   parameter [1:0]
-		MXSRC_MASK = 2'h2,
-		MXSRC_LIT = 2'h3,
-		MXSRC_WREG = 2'h0,
-		MXSRC_FILE = 2'h1;
    wire [1:0] 	  wMXSRC =                  		
 		  (fMOVLW|fRETLW|fCOMF|
 		   fDECF|fDECFSZ|fDCFSNZ|
@@ -553,11 +666,6 @@ module ae18_core (/*AUTOARG*/
 		  MXSRC_WREG;
    
    // MX_TGT
-   parameter [1:0]
-		MXTGT_MASK = 2'h2,
-		MXTGT_LIT = 2'h3,
-		MXTGT_WREG = 2'h0,
-		MXTGT_FILE = 2'h1;
    wire [1:0] 	  wMXTGT = 
 		  (fBCF) ? MXTGT_MASK :
 		  (fRETLW|fMOVLW|
@@ -577,11 +685,6 @@ module ae18_core (/*AUTOARG*/
 		  MXTGT_WREG;
 	  
    // MX_DST
-   parameter [1:0]
-		MXDST_NULL = 2'h0,
-		MXDST_EXT = 2'h1,
-		MXDST_WREG = 2'h2,
-		MXDST_FILE = 2'h3;   
    wire [1:0] 	  wMXDST =
 		  (fMULWF|fMULLW|fMOVLB|fLFSR|fDAW) ? MXDST_EXT :
 	      	  (fBCF|fBSF|fBTG|
@@ -601,25 +704,6 @@ module ae18_core (/*AUTOARG*/
 		  MXDST_NULL;
 
    // MX_ALU
-   parameter [3:0]
-		MXALU_XOR = 4'h0,
-		MXALU_IOR = 4'h1,
-		MXALU_AND = 4'h2,
-		MXALU_SWAP = 4'h3,
-		MXALU_ADD = 4'h4,
-		MXALU_ADDC = 4'h5,
-		MXALU_SUB = 4'h6,
-		MXALU_SUBC = 4'h7,
-		MXALU_RLNC = 4'h8,
-		MXALU_RLC = 4'h9,
-		MXALU_RRNC = 4'hA,
-		MXALU_RRC = 4'hB,
-		MXALU_NEG = 4'hC,
-		// EXTRA
-		MXALU_MOVLB = 4'hC,
-		MXALU_DAW = 4'hD,
-		MXALU_LFSR = 4'hE,
-		MXALU_MUL = 4'hF;
    wire [3:0] 	  wMXALU =
 		  (fDAW) ? MXALU_DAW :
 		  (fMOVLB) ? MXALU_MOVLB :
@@ -645,11 +729,6 @@ module ae18_core (/*AUTOARG*/
 		  MXALU_XOR;
 
    // MX_BSR   
-   parameter [1:0]
-		MXBSR_BSR = 2'o3,
-		MXBSR_BSA = 2'o2,
-		MXBSR_LIT = 2'o1,
-		MXBSR_NUL = 2'o0;   
    wire [1:0] 	  wMXBSR =
 		  (fMOVFF) ? MXBSR_LIT :
 		  (fBCF|fBSF|fBTG|fBTFSS|fBTFSC|
@@ -662,13 +741,6 @@ module ae18_core (/*AUTOARG*/
 		  MXBSR_NUL;   
 
    // MX_SKP
-   parameter [2:0]
-		MXSKP_SZ = 3'o1,
-		MXSKP_SNZ = 3'o2,
-		MXSKP_SNC = 3'o3,
-		MXSKP_SU = 3'o4,
-		MXSKP_SCC = 3'o7,
-		MXSKP_NON = 3'o0;
    wire [2:0] 	  wMXSKP =
 		  (fTSTFSZ|fINCFSZ|fDECFSZ|fCPFSEQ|fBTFSC) ? MXSKP_SZ :
 		  (fINFSNZ|fDCFSNZ|fBTFSS) ? MXSKP_SNZ :
@@ -678,15 +750,6 @@ module ae18_core (/*AUTOARG*/
 		  MXSKP_NON;
 
    // NPC_MX
-   parameter [2:0]
-		MXNPC_FAR = 3'o3,
-		MXNPC_NEAR = 3'o2,
-		MXNPC_BCC = 3'o7,
-		MXNPC_RET = 3'o1,
-		MXNPC_RESET = 3'o4,
-		MXNPC_ISRH = 3'o5,
-		MXNPC_ISRL = 3'o6,
-		MXNPC_INC = 3'o0;
    wire [2:0] 	  wMXNPC =
 		  (fBC|fBNC|fBN|fBNN|fBOV|fBNOV|fBZ|fBNZ) ? MXNPC_BCC :
 		  (fBRA|fRCALL) ? MXNPC_NEAR :
@@ -695,13 +758,6 @@ module ae18_core (/*AUTOARG*/
 		  MXNPC_INC;
 
    // MX_STA
-   parameter [2:0]
-		MXSTA_ALL = 3'o7,
-		MXSTA_CZN = 3'o1,
-		MXSTA_ZN = 3'o2,
-		MXSTA_Z = 3'o3,
-		MXSTA_C = 3'o4,
-		MXSTA_NONE = 3'o0;
    wire [2:0] 	  wMXSTA =
 		  (fADDLW|fADDWF|fADDWFC|
 		   fSUBLW|fSUBWF|fSUBWFB|fSUBFWB|
@@ -715,33 +771,15 @@ module ae18_core (/*AUTOARG*/
 		  MXSTA_NONE;
    
    // BCC_MX
-   parameter [2:0]
-		MXBCC_BZ = 3'o0,
-		MXBCC_BNZ = 3'o1,
-		MXBCC_BC = 3'o2,
-		MXBCC_BNC = 3'o3,
-		MXBCC_BOV = 3'o4,
-		MXBCC_BNOV = 3'o5,
-		MXBCC_BN = 3'o6,
-		MXBCC_BNN = 3'o7;
    wire [2:0] 	  wMXBCC = fOPCL[2:0];
    
    // STK_MX
-   parameter [1:0]
-		MXSTK_PUSH = 2'o2,
-		MXSTK_POP = 2'o1,
-		MXSTK_NONE = 2'o0;
    wire [1:0] 	  wMXSTK =
 		  (fRETFIE|fRETLW|fRETURN|fPOP) ? MXSTK_POP :
 		  (fCALL|fRCALL|fPUSH|fINT) ? MXSTK_PUSH :
 		  MXSTK_NONE;
 
    // SHADOW MX
-   parameter [1:0]
-		MXSHA_CALL = 2'o2,
-		MXSHA_RET = 2'o1,
-		MXSHA_NONE = 2'o0;
-   
    wire [1:0] 	  wMXSHA =
 		  (fCALL) ? {fOPCL[0] ,1'b0} :
 		  (fINT) ? {MXSHA_CALL} :
@@ -749,16 +787,6 @@ module ae18_core (/*AUTOARG*/
 		  1'b0;   
 
    // TBLRD/TBLWT MX
-   parameter [3:0]
-		MXTBL_RD = 4'h8,
-		MXTBL_RDINC = 4'h9,
-		MXTBL_RDDEC = 4'hA,
-		MXTBL_RDPRE = 4'hB,
-		MXTBL_WT = 4'hC,
-		MXTBL_WTINC = 4'hD,
-		MXTBL_WTDEC = 4'hE,
-		MXTBL_WTPRE = 4'hF,
-		MXTBL_NOP = 4'h0;
    wire [3:0] 	  wMXTBL = 
 		  (fTBLRDWT) ? fOPCK[3:0] :
 		  MXTBL_NOP;   
@@ -1165,6 +1193,19 @@ module ae18_core (/*AUTOARG*/
 	 FSM_Q0: rDWBSTB <= #1 ((rMXSRC == MXSRC_FILE) | (rMXTGT == MXTGT_FILE));
 	 default: rDWBSTB <= #1 1'b0;	 
        endcase // case(qfsm)
+
+   // STACK
+   wire [ISIZ-1:0] wSTKW = {rTOSU,rTOSH,rTOSL};
+   wire [ISIZ-1:0] wSTKR;
+   wire 	   wSTKE = (qena[1]);
+   
+   ae18_aram #(ISIZ,5)
+     stack (
+	    .wdat(wSTKW), .rdat(wSTKR),
+	    .radr(rSTKPTR[4:0]), .wadr(rSTKPTR_[4:0]), 
+	    .we(wSTKE),
+	    // Inputs
+	    .clk			(clk));
 
    /*
     * SFR Bank
@@ -1580,18 +1621,5 @@ module ae18_core (/*AUTOARG*/
        rNSKP <= 1'h1;
      else if (qena[3])       
        rNSKP <= #1 ((rDWBADR == aPCL) & rDWBWE) ? 1'b0 : ~(wSKP & rNSKP);
-
-   // STACK
-   wire [ISIZ-1:0] wSTKW = {rTOSU,rTOSH,rTOSL};
-   wire [ISIZ-1:0] wSTKR;
-   wire 	   wSTKE = (qena[1]);
-   
-   ae18_aram #(ISIZ,5)
-     stack (
-	    .wdat(wSTKW), .rdat(wSTKR),
-	    .radr(rSTKPTR[4:0]), .wadr(rSTKPTR_[4:0]), 
-	    .we(wSTKE),
-	    // Inputs
-	    .clk			(clk));
          
 endmodule // ae18_core
