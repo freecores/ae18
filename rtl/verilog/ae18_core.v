@@ -3,14 +3,15 @@
 // Description     : PIC18 compatible core.
 // Author          : Shawn Tan Ser Ngiap <shawn.tan@aeste.net>
 // Created On      : Fri Dec 22 16:09:33 2006
-// Last Modified By: Shawn Tan
-// Last Modified On: 2006-12-29
-// Update Count    : 0
-// Status          : Beta/Stable
+// Last Modified By: $Author: sybreon $
+// Last Modified On: $Date: 2007-04-03 22:13:25 $
+// Update Count    : $Revision: 1.6 $
+// Status          : $State: Exp $
 
 /*
- * $Id: ae18_core.v,v 1.5 2007-03-04 23:26:37 sybreon Exp $
+ * $Id: ae18_core.v,v 1.6 2007-04-03 22:13:25 sybreon Exp $
  * 
+ * AE18 8-bit Microprocessor Core
  * Copyright (C) 2006 Shawn Tan Ser Ngiap <shawn.tan@aeste.net>
  *  
  * This library is free software; you can redistribute it and/or modify it 
@@ -36,9 +37,11 @@
  *
  * HISTORY
  * $Log: not supported by cvs2svn $
+ * Revision 1.5  2007/03/04 23:26:37  sybreon
+ * Rearranged code to make it synthesisable.
+ *
  * Revision 1.4  2006/12/29 18:08:56  sybreon
  * Minor code clean up
- *
  * 
  */
 
@@ -61,7 +64,7 @@ module ae18_core (/*AUTOARG*/
    output 	     wb_clk_o, wb_rst_o;
 
    // Instruction WB Bus
-   output [ISIZ-1:1] iwb_adr_o;
+   output [ISIZ-1:0] iwb_adr_o;
    output [15:0]     iwb_dat_o;
    output 	     iwb_stb_o, iwb_we_o;
    output [1:0]      iwb_sel_o;   
@@ -221,13 +224,13 @@ module ae18_core (/*AUTOARG*/
 		     rFSR0H, rFSR0L, rFSR1H, rFSR1L, rFSR2H, rFSR2L;
    
    reg  	     rSWDTEN, rSTKFUL, rSTKUNF;
-   reg 		     rZ,rOV,rDC,rN,rC; 		     
-   
+   reg 		     rZ,rOV,rDC,rN,rC;
+ 
    reg [5:0] 	     rSTKPTR, rSTKPTR_;   
    reg [7:0] 	     rWREG, rWREG_;
    reg [7:0] 	     rBSR, rBSR_;
    reg [4:0] 	     rSTATUS_;
-
+ 
    // Control Word Registers
    reg [1:0] 	     rMXSRC, rMXTGT, rMXDST, rMXBSR, rMXSTK, rMXSHA;
    reg [2:0] 	     rMXSKP, rMXSTA, rMXNPC, rMXBCC;
@@ -263,6 +266,7 @@ module ae18_core (/*AUTOARG*/
 	rWDT <= {(1+(WSIZ)){1'b0}};
 	// End of automatics
      end else if (rCLRWDT|rSLEEP) begin
+	$display("\tWDT cleared.");	
 	/*AUTORESET*/
 	// Beginning of autoreset for uninitialized flops
 	rWDT <= {(1+(WSIZ)){1'b0}};
@@ -389,7 +393,7 @@ module ae18_core (/*AUTOARG*/
    reg [1:0] 	     rIWBSEL;   
    //reg [15:0] 	     rIDAT;
      
-   assign 	     iwb_adr_o = rIWBADR;
+   assign 	     iwb_adr_o = {rIWBADR,1'b0};
    assign 	     iwb_stb_o = rIWBSTB;
    assign 	     iwb_we_o = rIWBWE;
    assign 	     iwb_dat_o = {rTABLAT,rTABLAT};
@@ -414,8 +418,8 @@ module ae18_core (/*AUTOARG*/
 	    case (rINTF)
 	      FSM_ISRH: rIWBADR <= #1 23'h000004;
 	      FSM_ISRL: rIWBADR <= #1 23'h00000C;    
-	      default: rIWBADR <= #1 rPCNXT;
-	    endcase // case(rINTF)	    
+	      default: rIWBADR <= #1 rPCNXT;	      
+	    endcase // case(rINTF)
 	 end
 	 FSM_Q1: begin
 	    rIWBADR <= #1 (rMXTBL == MXTBL_NOP) ? rIWBADR : {rTBLPTRU,rTBLPTRH,rTBLPTRL[7:1]};
@@ -809,7 +813,7 @@ module ae18_core (/*AUTOARG*/
 		aPOSTINC0 = 16'hFFEE,
 		aINDF0 = 16'hFFEF;   
 
-   wire 	   fGFF = (rEAPTR[15:6] == 10'h3FF);
+   wire 	   fGFF = (rEAPTR[15:6] == 10'h03F) | (rEAPTR[15:6] == 10'h3FF);
    wire 	   fGFSR0 = (rEAPTR[5:3] == 3'o5);
    wire 	   fGFSR1 = (rEAPTR[5:3] == 3'o4);
    wire 	   fGFSR2 = (rEAPTR[5:3] == 3'o3);
@@ -1048,8 +1052,8 @@ module ae18_core (/*AUTOARG*/
        case (rMXALU)
 	 MXALU_ADD: rC_ <= #1 wADD[8];
 	 MXALU_ADDC: rC_ <= #1 wADDC[8];
-	 MXALU_SUB: rC_ <= #1 wSUB[8];
-	 MXALU_SUBC: rC_ <= #1 wSUBC[8];
+	 MXALU_SUB: rC_ <= #1 ~wSUB[8];
+	 MXALU_SUBC: rC_ <= #1 ~wSUBC[8];
 	 MXALU_RRC: rC_ <= #1 wRRC[8];
 	 MXALU_RLC: rC_ <= #1 wRLC[8];	
 	 MXALU_NEG: rC_ <= #1 wNEG[8];	 
@@ -1059,7 +1063,7 @@ module ae18_core (/*AUTOARG*/
    wire 	  wC, wZ, wN, wOV, wDC;
    assign 	  wN = rRESULT[7];
    assign 	  wOV = ~(rSRC[7] ^ rTGT[7]) & (rRESULT[7] ^ rSRC[7]);
-   assign 	  wZ = (rRESULT == 8'h00);
+   assign 	  wZ = (rRESULT[7:0] == 8'h00);
    assign 	  wDC = rRESULT[4];   
    assign 	  wC = rC_;
    
@@ -1271,7 +1275,7 @@ module ae18_core (/*AUTOARG*/
 	  aTOSH[5:0]: rSFRDAT <= #1 rTOSH;
 	  aTOSL[5:0]: rSFRDAT <= #1 rTOSL;
 	  default rSFRDAT <= #1 rSFRDAT;	  
-	endcase // case(rDWBADR)	
+	endcase // case(rDWBADR)
      end   
 
    wire wSFRSTB = (rDWBADR[15:6] == 10'h3FF);   
