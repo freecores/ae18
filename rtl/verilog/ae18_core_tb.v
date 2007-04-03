@@ -3,15 +3,16 @@
 // Description     : AE18 Simulation Testbench
 // Author          : Shawn Tan Ser Ngiap <shawn.tan@aeste.net>
 // Created On      : Fri Dec 29 05:02:51 2006
-// Last Modified By: Shawn Tan
-// Last Modified On: 2006-12-29
-// Update Count    : 0
-// Status          : Beta/Stable
+// Last Modified By: $Author: sybreon $
+// Last Modified On: $Date: 2007-04-03 22:10:52 $
+// Update Count    : $Revision: 1.3 $
+// Status          : $State: Exp $
 
 /*
  *
- * $Id: ae18_core_tb.v,v 1.2 2006-12-29 18:08:11 sybreon Exp $
+ * $Id: ae18_core_tb.v,v 1.3 2007-04-03 22:10:52 sybreon Exp $
  * 
+ * AE18 Core Simulation Testbench
  * Copyright (C) 2006 Shawn Tan Ser Ngiap <shawn.tan@aeste.net>
  *  
  * This library is free software; you can redistribute it and/or modify it 
@@ -35,14 +36,16 @@
  * 
  * HISTORY
  * $Log: not supported by cvs2svn $
+ * Revision 1.2  2006/12/29 18:08:11  sybreon
+ * Minor clean up
  * 
  */
 
 module ae18_core_tb (/*AUTOARG*/);
    parameter ISIZ = 16;
-   parameter DSIZ = 10;
+   parameter DSIZ = 16;
    
-   wire [ISIZ-1:1] iwb_adr_o;
+   wire [ISIZ-1:0] iwb_adr_o;
    wire [DSIZ-1:0] dwb_adr_o;
    wire [7:0] 	   dwb_dat_o;
    wire [7:0] 	   dwb_dat_i;   
@@ -58,12 +61,19 @@ module ae18_core_tb (/*AUTOARG*/);
    reg 		   dwb_ack_i, iwb_ack_i;
    reg [15:0] 	   iwb_dat_i;   
 
+   integer 	   fileno;
+
+   // Log File
+   initial begin
+      fileno = $fopen ("ae18_core.log");      
+   end
+   
    // Dump Files
    initial begin
       $dumpfile("ae18_core.vcd");      
       $dumpvars(1, iwb_adr_o,iwb_dat_i,iwb_stb_o,iwb_we_o,iwb_sel_o);
       $dumpvars(1, dwb_adr_o,dwb_dat_i,dwb_dat_o,dwb_we_o,dwb_stb_o);
-      $dumpvars(1, clk_i,int_i);      
+      $dumpvars(1, clk_i,int_i,wb_rst_o);      
       $dumpvars(1, dut);      
    end
 
@@ -73,17 +83,12 @@ module ae18_core_tb (/*AUTOARG*/);
       int_i = 2'b00;
 
       #50 rst_i = 1;
-      #20000 int_i = 2'b10;
+      #30000 int_i = 2'b10;
       #50 int_i = 2'b00;      
    end
 
    // Test Points
    initial fork
-      #20000 if (dut.rFSM != 2'b11) $display("*** SLEEP error ***");
-      #30000 if (dut.rFSM != 2'b00) $display("*** WAKEUP error ***");
-      #40000 if (dut.rFSM != 2'b11) $display("*** RESET error ***");
-      #60000 if (dut.rFSM != 2'b00) $display("*** WDT error ***");      
-      #70000 if (dut.rFSM == 2'b11) $display("Test response OK!!");
       #80000
 	$finish;      
    join
@@ -93,16 +98,20 @@ module ae18_core_tb (/*AUTOARG*/);
    reg [15:0]  rom [0:65535];
 
    // Load ROM contents
-   initial begin
+   initial begin      
       $readmemh ("ae18_core.rom", rom);
    end   
 
    // Fake Memory Signals
-   always @(posedge clk_i) begin
+   always @(posedge clk_i) begin      
       dwb_ack_i <= dwb_stb_o;
       iwb_ack_i <= iwb_stb_o;      
-      if (iwb_stb_o) iwb_dat_i <= rom[iwb_adr_o];
-   end   
+      if (iwb_stb_o) iwb_dat_i <= rom[iwb_adr_o[ISIZ-1:1]];
+   end
+
+   always @(negedge clk_i) begin
+      $fdisplayh(fileno, "IWB=",iwb_adr_o);      
+   end
 
    ae18_sram #(8,DSIZ)
      ram (
@@ -113,12 +122,12 @@ module ae18_core_tb (/*AUTOARG*/);
 	  .clk	(clk_i));
 
    // AE18 test core   
-   ae18_core #(ISIZ,DSIZ,11)
+   ae18_core #(ISIZ,DSIZ,32)
      dut (/*AUTOINST*/
 	  // Outputs
 	  .wb_clk_o			(wb_clk_o),
 	  .wb_rst_o			(wb_rst_o),
-	  .iwb_adr_o			(iwb_adr_o[ISIZ-1:1]),
+	  .iwb_adr_o			(iwb_adr_o[ISIZ-1:0]),
 	  .iwb_dat_o			(iwb_dat_o[15:0]),
 	  .iwb_stb_o			(iwb_stb_o),
 	  .iwb_we_o			(iwb_we_o),

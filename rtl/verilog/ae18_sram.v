@@ -3,15 +3,16 @@
 // Description     : AE18 Synchronous RAM
 // Author          : Shawn Tan Ser Ngiap <shawn.tan@aeste.net>
 // Created On      : Fri Dec 29 05:12:03 2006
-// Last Modified By: Shawn Tan
-// Last Modified On: 2006-12-29
-// Update Count    : 0
-// Status          : Beta/Stable
+// Last Modified By: $Author: sybreon $
+// Last Modified On: $Date: 2007-04-03 22:10:52 $
+// Update Count    : $Revision: 1.3 $
+// Status          : $State: Exp $
 
 /*
  *
- * $Id: ae18_sram.v,v 1.2 2006-12-29 18:03:07 sybreon Exp $
+ * $Id: ae18_sram.v,v 1.3 2007-04-03 22:10:52 sybreon Exp $
  * 
+ * AE18 Synchronous Single Port RAM Block
  * Copyright (C) 2006 Shawn Tan Ser Ngiap <shawn.tan@aeste.net>
  *  
  * This library is free software; you can redistribute it and/or modify it 
@@ -33,6 +34,8 @@
  * 
  * HISTORY
  * $Log: not supported by cvs2svn $
+ * Revision 1.2  2006/12/29 18:03:07  sybreon
+ * *** empty log message ***
  * 
  */
 
@@ -60,5 +63,13 @@ module ae18_sram (/*AUTOARG*/
       if (we) rMEM[wadr] <= #1 wdat;      
       rADR <= #1 radr;      
    end     
+
+   /* SIMULATION CONSTRUCT */
+   integer i;   
+   initial begin
+      $display ("Clearing RAM block for simulation.");      
+      for (i=0;i<((1<<SSIZ)-1);i=i+1)
+	rMEM[i] <= 0;      
+   end
    
 endmodule // ae18_sram
