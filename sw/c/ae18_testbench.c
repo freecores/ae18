@@ -1,5 +1,5 @@
 /*
- * $Id: ae18_testbench.c,v 1.1 2007-04-03 22:09:48 sybreon Exp $
+ * $Id: ae18_testbench.c,v 1.2 2007-04-03 23:59:32 sybreon Exp $
  * 
  * AE18 Functional Verification C Code
  * Copyright (C) 2006 Shawn Tan Ser Ngiap <shawn.tan@aeste.net>
@@ -19,13 +19,18 @@
  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
  *
  * DESCRIPTION 
- *
  * Runs a test programme that calculates the Fibonnaci sequence with
  * different algorithms, a recursive one and an iterative one. This is
  * checked against the values in a look up table.
+ *
+ * The fibonnaci code is from 
+ * http://en.literateprograms.org/Fibonacci_numbers_(C)
  * 
  * HISTORY
  * $Log: not supported by cvs2svn $
+ * Revision 1.1  2007/04/03 22:09:48  sybreon
+ * Compiles C test code using SDCC.
+ *
  */
 
 #include <pic18fregs.h>
@@ -70,7 +75,7 @@ unsigned int fastfib(unsigned int n)
 
 int main() {
   unsigned int n;
-  unsigned int fib_res;  
+  unsigned int fib_slow, fib_fast;  
   unsigned int fib_lut[] = {0,
 			    1,
 			    1,
@@ -108,12 +113,12 @@ int main() {
 			    5702887};  
      
   for (n=0;n<35;n++) {
-    fib_res = slowfib(n);    
-    while ((fib_res != fastfib(n)) || (fib_res != fib_lut[n])) {
-      fib_lut[n] = fib_res;
+    fib_slow = slowfib(n);    
+    fib_fast = fastfib(n);
+    while ((fib_slow != fib_fast) || (fib_slow != fib_lut[n])) {
+      fib_lut[n] = 0x00ED17FA;
     }
-    fib_lut[n] = fib_res;
   }    
   
-  return fib_res;
+  return fib_fast;
 }
