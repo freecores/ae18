@@ -1,19 +1,8 @@
-//                              -*- Mode: Verilog -*-
-// Filename        : ae18_core_tb.v
-// Description     : AE18 Simulation Testbench
-// Author          : Shawn Tan Ser Ngiap <shawn.tan@aeste.net>
-// Created On      : Fri Dec 29 05:02:51 2006
-// Last Modified By: $Author: sybreon $
-// Last Modified On: $Date: 2007-04-03 22:10:52 $
-// Update Count    : $Revision: 1.3 $
-// Status          : $State: Exp $
-
 /*
- *
- * $Id: ae18_core_tb.v,v 1.3 2007-04-03 22:10:52 sybreon Exp $
+ * $Id: testbench.v,v 1.1 2007-04-13 22:18:52 sybreon Exp $
  * 
  * AE18 Core Simulation Testbench
- * Copyright (C) 2006 Shawn Tan Ser Ngiap <shawn.tan@aeste.net>
+ * Copyright (C) 2006-2007 Shawn Tan Ser Ngiap <shawn.tan@aeste.net>
  *  
  * This library is free software; you can redistribute it and/or modify it 
  * under the terms of the GNU Lesser General Public License as published by 
@@ -21,27 +10,30 @@
  * or (at your option) any later version.
  * 
  * This library is distributed in the hope that it will be useful, but 
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
- * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public 
- * License for more details.
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU Lesser General Public License 
- * along with this library; if not, write to the Free Software Foundation, Inc.,
- * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+ * USA
  *
  * DESCRIPTION
  * Simple unit test with fake ROM and fake RAM contents. It loads the ROM 
- * from the ae18_core.rom file. This file will usually contain the test
- * software from ae18_core.asm in the software directory.
+ * from the ae18_core.rom file. 
  * 
  * HISTORY
  * $Log: not supported by cvs2svn $
+ * Revision 1.3  2007/04/03 22:10:52  sybreon
+ * Minor simulation changes.
+ *
  * Revision 1.2  2006/12/29 18:08:11  sybreon
  * Minor clean up
  * 
  */
 
-module ae18_core_tb (/*AUTOARG*/);
+module tb (/*AUTOARG*/);
    parameter ISIZ = 16;
    parameter DSIZ = 16;
    
@@ -61,11 +53,10 @@ module ae18_core_tb (/*AUTOARG*/);
    reg 		   dwb_ack_i, iwb_ack_i;
    reg [15:0] 	   iwb_dat_i;   
 
-   integer 	   fileno;
-
    // Log File
+   integer 	   fileno;
    initial begin
-      fileno = $fopen ("ae18_core.log");      
+      //fileno = $fopen ("ae18_core.log");      
    end
    
    // Dump Files
@@ -74,11 +65,11 @@ module ae18_core_tb (/*AUTOARG*/);
       $dumpvars(1, iwb_adr_o,iwb_dat_i,iwb_stb_o,iwb_we_o,iwb_sel_o);
       $dumpvars(1, dwb_adr_o,dwb_dat_i,dwb_dat_o,dwb_we_o,dwb_stb_o);
       $dumpvars(1, clk_i,int_i,wb_rst_o);      
-      $dumpvars(1, dut);      
+      //$dumpvars(1, dut);      
    end
 
    initial begin
-      clk_i = 1;
+      clk_i = 0;
       rst_i = 0;
       int_i = 2'b00;
 
@@ -97,29 +88,37 @@ module ae18_core_tb (/*AUTOARG*/);
 
    reg [15:0]  rom [0:65535];
 
-   // Load ROM contents
-   initial begin      
-      $readmemh ("ae18_core.rom", rom);
-   end   
-
    // Fake Memory Signals
    always @(posedge clk_i) begin      
-      dwb_ack_i <= dwb_stb_o;
       iwb_ack_i <= iwb_stb_o;      
       if (iwb_stb_o) iwb_dat_i <= rom[iwb_adr_o[ISIZ-1:1]];
    end
 
-   always @(negedge clk_i) begin
-      $fdisplayh(fileno, "IWB=",iwb_adr_o);      
+   reg [DSIZ-1:0] dadr;
+   reg [7:0] ram [(1<<DSIZ)-1:0];
+   
+   assign    dwb_dat_i = ram[dadr];   
+   always @(posedge clk_i) begin
+      dwb_ack_i <= dwb_stb_o;
+      dadr <= dwb_adr_o;
+      if (dwb_we_o & dwb_stb_o)
+	ram[dwb_adr_o] <= dwb_dat_o;      
    end
+   
+   // Load ROM contents
+   integer     i; 
+   initial begin
+      for (i=0;i<65536;i=i+1) rom[i] <= 0;
+      for (i=0;i<65536;i=i+1) ram[i] <= $random;
+      #1 $readmemh ("ae18_core.rom", rom);
+   end   
 
-   ae18_sram #(8,DSIZ)
-     ram (
-	  .radr(dwb_adr_o), .wadr(dwb_adr_o),
-	  .rdat(dwb_dat_i), .wdat(dwb_dat_o),
-	  .we(dwb_we_o & dwb_stb_o),
-	  // Inputs
-	  .clk	(clk_i));
+   // LOG
+   always @(negedge clk_i) begin
+      $write("\nT:",$stime);      
+      if (iwb_stb_o & iwb_ack_i & !iwb_we_o & dut.rQCLK[0])
+	$writeh("\tIWB:0x",iwb_adr_o,"=0x",iwb_dat_i);      
+   end
 
    // AE18 test core   
    ae18_core #(ISIZ,DSIZ,32)
@@ -147,3 +146,7 @@ module ae18_core_tb (/*AUTOARG*/);
 	  .rst_i			(rst_i));
    
 endmodule // ae18_core_tb
+
+// Local Variables:
+// verilog-library-directories:("." "../../rtl/verilog/")
+// End:

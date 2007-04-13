@@ -1,15 +1,5 @@
-//                              -*- Mode: Verilog -*-
-// Filename        : ae18_core.v
-// Description     : PIC18 compatible core.
-// Author          : Shawn Tan Ser Ngiap <shawn.tan@aeste.net>
-// Created On      : Fri Dec 22 16:09:33 2006
-// Last Modified By: $Author: sybreon $
-// Last Modified On: $Date: 2007-04-03 22:13:25 $
-// Update Count    : $Revision: 1.6 $
-// Status          : $State: Exp $
-
 /*
- * $Id: ae18_core.v,v 1.6 2007-04-03 22:13:25 sybreon Exp $
+ * $Id: ae18_core.v,v 1.7 2007-04-13 22:18:51 sybreon Exp $
  * 
  * AE18 8-bit Microprocessor Core
  * Copyright (C) 2006 Shawn Tan Ser Ngiap <shawn.tan@aeste.net>
@@ -20,13 +10,14 @@
  * or (at your option) any later version.
  * 
  * This library is distributed in the hope that it will be useful, but 
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY 
- * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public 
- * License for more details.
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
  * 
- * You should have received a copy of the GNU Lesser General Public License 
- * along with this library; if not, write to the Free Software Foundation, Inc.,
- * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA 
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+ * USA
  *
  * DESCRIPTION
  * This core provides a PIC18 software compatible core. It does not provide
@@ -37,6 +28,12 @@
  *
  * HISTORY
  * $Log: not supported by cvs2svn $
+ * Revision 1.6  2007/04/03 22:13:25  sybreon
+ * Fixed various bugs:
+ * - STATUS,C not correct for subtraction instructions
+ * - Data memory indirect addressing mode bugs
+ * - Other minor fixes
+ *
  * Revision 1.5  2007/03/04 23:26:37  sybreon
  * Rearranged code to make it synthesisable.
  *
@@ -83,9 +80,9 @@ module ae18_core (/*AUTOARG*/
    input [7:6] 	     inte_i;   
    input 	     clk_i, rst_i;
 
-	/*
-	 * Parameters
-	 */
+   /*
+    * Parameters
+    */
    // State Registers
    parameter [2:0] 
 		FSM_RUN = 4'h0,
@@ -1202,14 +1199,13 @@ module ae18_core (/*AUTOARG*/
    wire [ISIZ-1:0] wSTKW = {rTOSU,rTOSH,rTOSL};
    wire [ISIZ-1:0] wSTKR;
    wire 	   wSTKE = (qena[1]);
+
+   reg [ISIZ-1:0]  rSTKRAM [0:31];
    
-   ae18_aram #(ISIZ,5)
-     stack (
-	    .wdat(wSTKW), .rdat(wSTKR),
-	    .radr(rSTKPTR[4:0]), .wadr(rSTKPTR_[4:0]), 
-	    .we(wSTKE),
-	    // Inputs
-	    .clk			(clk));
+   assign 	   wSTKR = rSTKRAM[rSTKPTR[4:0]];   
+   always @(posedge clk)
+     if (wSTKE) 
+       rSTKRAM[rSTKPTR_[4:0]] <= wSTKW;
 
    /*
     * SFR Bank
