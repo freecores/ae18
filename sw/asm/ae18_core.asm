@@ -1,5 +1,5 @@
 ;;; 
-;;; $Id: ae18_core.asm,v 1.3 2006-12-29 17:54:21 sybreon Exp $
+;;; $Id: ae18_core.asm,v 1.4 2007-10-11 18:52:24 sybreon Exp $
 ;;; 
 ;;; Copyright (C) 2006 Shawn Tan Ser Ngiap <shawn.tan@aeste.net>
 ;;;
@@ -22,9 +22,8 @@
 ;;; the AE18 core. It is by no means an exhaustive test. However, it does
 ;;; perform at least each PIC18 command at least once. This file has been
 ;;; compiled using GPASM and GPLINK.
-;;; 
-;;; 2006-12-27
-;;; Passes ALL tests.
+;;;
+;;; $Log: not supported by cvs2svn $
 ;;; 
 	
 	include	"p18f452.inc"
@@ -77,7 +76,7 @@ _START_TEST:
 	rcall	_FSR_TEST	
 	rcall	_SHA_TEST	
 	rcall	_TBL_TEST	
-	rcall	_PCL_TEST
+	;; rcall	_PCL_TEST
 	
 
 	;; All tests OK!!
@@ -319,11 +318,11 @@ _SKIP_TEST:
 
 	cpfseq	reg0
 	bra	$
+	movlw	0x02		
+	cpfslt	reg0
+	bra	$
 	movlw	0x00		; WREG = 0x00
 	cpfsgt	reg0
-	bra	$
-	movlw	0x02
-	cpfslt	reg0
 	bra	$
 
 	movlw	0x00
