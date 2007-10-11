@@ -1,5 +1,5 @@
 /*
- * $Id: ae18_core.v,v 1.7 2007-04-13 22:18:51 sybreon Exp $
+ * $Id: ae18_core.v,v 1.8 2007-10-11 18:51:49 sybreon Exp $
  * 
  * AE18 8-bit Microprocessor Core
  * Copyright (C) 2006 Shawn Tan Ser Ngiap <shawn.tan@aeste.net>
@@ -28,6 +28,10 @@
  *
  * HISTORY
  * $Log: not supported by cvs2svn $
+ * Revision 1.7  2007/04/13 22:18:51  sybreon
+ * Moved testbench into sim/verilog/testbench.v
+ * Minor cleanup.
+ *
  * Revision 1.6  2007/04/03 22:13:25  sybreon
  * Fixed various bugs:
  * - STATUS,C not correct for subtraction instructions
@@ -401,6 +405,8 @@ module ae18_core (/*AUTOARG*/
    
    reg [ISIZ-2:0]    rPCNXT;
    wire [ISIZ-2:0]   wPCLAT = {rPCU,rPCH,rPCL[7:1]};
+
+   // FIXME: PCL writes do not affect PC
    
    // IWB ADDR signal
    always @(negedge clk or negedge qrst)
@@ -440,7 +446,8 @@ module ae18_core (/*AUTOARG*/
      end else if (qena[1]) begin
 	case (rMXNPC)
 	  MXNPC_RET: rPCNXT <= #1 wPCSTK;
-	  MXNPC_RESET: rPCNXT <= #1 24'h00;
+	  //MXNPC_RESET: rPCNXT <= #1 24'h00;
+	  //MXNPC_PCL: rPCNXT <= #1 wPCLAT;	  
 	  MXNPC_ISRH: rPCNXT <= #1 24'h08;
 	  MXNPC_ISRL: rPCNXT <= #1 24'h18;	  
 	  MXNPC_NEAR: rPCNXT <= #1 wPCNEAR;	  
@@ -1612,7 +1619,7 @@ module ae18_core (/*AUTOARG*/
    wire 	  wSKP = 
 		  (rMXSKP == MXSKP_SZ) ? wZ :
 		  (rMXSKP == MXSKP_SNZ) ? ~wZ :
-		  (rMXSKP == MXSKP_SNC) ? ~wC :
+		  (rMXSKP == MXSKP_SNC) ? wC :
 		  (rMXSKP == MXSKP_SCC) ? rBCC :
 		  (rMXSKP == MXSKP_SU) ? (1'b1) :
 		  1'b0;   
